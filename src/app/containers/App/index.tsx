@@ -21,6 +21,7 @@ const App = (): JSX.Element => {
 
                 <Route exact={true} path="/profile" component={Profile} />
                 <Route exact={true} path="/admin" component={Admin} />
+                <Route exact={true} path="/batch-update" component={() => <div>Batch update</div>} />
             </Layout>
         </Switch>
     );
