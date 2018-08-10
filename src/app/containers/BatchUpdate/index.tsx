@@ -4,10 +4,10 @@ import * as React from 'react';
 
 // const cn = classNames(require('./index.scss'));
 
-class BatchUpadte extends React.Component {
+class BatchUpdate extends React.Component {
     render() {
         return <div>Batch Update</div>;
     }
 }
 
-export default BatchUpadte;
+export default BatchUpdate;
