@@ -6,6 +6,8 @@ import { fetchAllCourses } from 'core/actions';
 import { classNames } from 'core/styles';
 import { getCoursesNames } from 'core/selectors/courses';
 import Dropzone from 'react-dropzone';
+import axios from 'axios';
+// import { library } from '@fortawesome/fontawesome-svg-core';
 
 const cn = classNames(require('./index.scss'));
 
@@ -54,6 +56,7 @@ class BatchUpdate extends React.Component<any, State> {
             coursesValue: 'choose course',
             disabled: false,
             files: [],
+            taskHeaders: [],
         };
     }
 
@@ -81,7 +84,16 @@ class BatchUpdate extends React.Component<any, State> {
         });
     };
 
-    parseTable = () => {};
+    parseTable = async () => {
+        const formData = new FormData();
+        formData.set('table', this.state.files[0]);
+        const res = await axios.post('/api/batch-update/parse-table', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        this.setState({ taskHeaders: res.data.data[0] });
+    };
 
     render() {
         return (
@@ -148,6 +160,7 @@ class BatchUpdate extends React.Component<any, State> {
                         >
                             Parse xlsx
                         </Button>
+                        <ul>{this.state.taskHeaders.map((header: any) => <li key={header}>{header}</li>)}</ul>
                     </div>
                 </div>
             </div>
