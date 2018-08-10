@@ -96,11 +96,18 @@ class Header extends React.Component<Props, any> {
                             </li>
                         )}
                         {this.props.isAdmin ? (
-                            <li className="nav-item">
-                                <NavLink className="nav-link" to="/admin">
-                                    Admin
-                                </NavLink>
-                            </li>
+                            <React.Fragment>
+                                <li className="nav-item">
+                                    <NavLink className="nav-link" to="/batch-update">
+                                        Batch update
+                                    </NavLink>
+                                </li>
+                                <li className="nav-item">
+                                    <NavLink className="nav-link" to="/admin">
+                                        Admin
+                                    </NavLink>
+                                </li>
+                            </React.Fragment>
                         ) : null}
                     </ul>
                 </div>
