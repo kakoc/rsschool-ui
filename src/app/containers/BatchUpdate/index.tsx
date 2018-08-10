@@ -1,15 +1,13 @@
 import * as React from 'react';
-import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
+import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Button } from 'reactstrap';
 import { connect } from 'react-redux';
 import { RootState } from 'core/reducers';
 import { fetchAllCourses } from 'core/actions';
+import { classNames } from 'core/styles';
 import { getCoursesNames } from 'core/selectors/courses';
 import Dropzone from 'react-dropzone';
-// import { read, utils } from 'xlsx';
 
-// import { classNames } from 'core/styles';
-
-// const cn = classNames(require('./index.scss'));
+const cn = classNames(require('./index.scss'));
 
 interface ITask {
     _id: string;
@@ -65,26 +63,6 @@ class BatchUpdate extends React.Component<any, State> {
     }
 
     onDrop = (files: any) => {
-        // const reader = new FileReader();
-        // reader.onload = e => {
-        //     // let filename = files[0].name;
-        //     let binary = '';
-        //     const bytes = new Uint8Array(e.target.result);
-        //     const length = bytes.byteLength;
-        //     for (let i = 0; i < length; i++) {
-        //         binary += String.fromCharCode(bytes[i]);
-        //     }
-        //     const Workbook = read(binary, { type: 'binary', cellDates: true });
-        //     const sheetName = Workbook.SheetNames[0];
-        // const json = utils.sheet_to_json(Workbook.Sheets[sheetName], { header: 1 });
-
-        // do whatever you want with the file content
-        // };
-        // reader.onabort = () => {};
-        // reader.onerror = () => {};
-
-        // reader.readAsArrayBuffer(files[0]);
-
         this.setState({
             files,
             disabled: true,
@@ -103,16 +81,33 @@ class BatchUpdate extends React.Component<any, State> {
         });
     };
 
+    parseTable = () => {};
+
     render() {
         return (
-            <div>
-                <div className="row">
-                    <div className="col-sm-6">
-                        <Dropdown
+            <div className="container">
+                <div className="row justify-content-md-center">
+                    <Dropzone
+                        className={
+                            'col-sm-6 ' + (this.state.disabled ? cn('dropzone-area--disabled') : cn('dropzone-area'))
+                        }
+                        onDrop={this.onDrop}
+                        disabled={this.state.disabled}
+                    >
+                        {this.state.disabled ? (
+                            <p>{this.state.files[0].name}</p>
+                        ) : (
+                            <p>Try dropping some files here, or click to select files to upload.</p>
+                        )}
+                    </Dropzone>
+                    <div className={cn('control-buttons') + ' col-sm-4'}>
+                        <ButtonDropdown
                             isOpen={this.state.coursesDropdownOpen}
                             toggle={this.toggle.bind(this, 'coursesDropdownOpen')}
                         >
-                            <DropdownToggle caret={true}>{this.state.coursesValue}</DropdownToggle>
+                            <DropdownToggle className={cn('action-button')} color="primary" caret={true}>
+                                {this.state.coursesValue}
+                            </DropdownToggle>
                             <DropdownMenu>
                                 {this.props.courses.map((course: any) => {
                                     return (
@@ -125,39 +120,35 @@ class BatchUpdate extends React.Component<any, State> {
                                     );
                                 })}
                             </DropdownMenu>
-                        </Dropdown>
+                        </ButtonDropdown>
+                        <ButtonDropdown
+                            isOpen={this.state.tasksDropdownOpen}
+                            toggle={this.toggle.bind(this, 'tasksDropdownOpen')}
+                        >
+                            <DropdownToggle className={cn('action-button')} color="primary" caret={true}>
+                                {this.state.tasksValue}
+                            </DropdownToggle>
+                            <DropdownMenu>
+                                {this.props.tasks.map((task: any) => {
+                                    return (
+                                        <DropdownItem
+                                            key={task._id}
+                                            onClick={(event: any) => this.select(event, 'tasksValue')}
+                                        >
+                                            {task.name}
+                                        </DropdownItem>
+                                    );
+                                })}
+                            </DropdownMenu>
+                        </ButtonDropdown>
+                        <Button
+                            color="success"
+                            className={cn('action-button') + (this.state.files.length ? '' : ' disabled')}
+                            onClick={this.parseTable}
+                        >
+                            Parse xlsx
+                        </Button>
                     </div>
-                    <div className="col-sm-6">
-                        <div className="col-sm-6">
-                            <Dropdown
-                                isOpen={this.state.tasksDropdownOpen}
-                                toggle={this.toggle.bind(this, 'tasksDropdownOpen')}
-                            >
-                                <DropdownToggle caret={true}>{this.state.tasksValue}</DropdownToggle>
-                                <DropdownMenu>
-                                    {this.props.tasks.map((task: any) => {
-                                        return (
-                                            <DropdownItem
-                                                key={task._id}
-                                                onClick={(event: any) => this.select(event, 'tasksValue')}
-                                            >
-                                                {task.name}
-                                            </DropdownItem>
-                                        );
-                                    })}
-                                </DropdownMenu>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </div>
-                <div className="row dropzone">
-                    <Dropzone onDrop={this.onDrop} disabled={this.state.disabled}>
-                        {this.state.disabled ? (
-                            <p>{this.state.files[0].name}</p>
-                        ) : (
-                            <p>Try dropping some files here, or click to select files to upload.</p>
-                        )}
-                    </Dropzone>
                 </div>
             </div>
         );

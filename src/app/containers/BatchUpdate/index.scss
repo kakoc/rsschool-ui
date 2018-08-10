@@ -1,0 +1,29 @@
+.action-button {
+  width: 240px;
+}
+
+.dropzone-area--disabled, 
+.dropzone-area {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  border-width: 2px;
+  border-color: gray;
+  border-style: dashed;
+  border-radius: 5px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.dropzone-area--disabled {
+  opacity: 0.5;
+}
+
+.control-buttons {
+  display: flex;
+  align-content: space-around;
+  flex-wrap: wrap;
+  justify-content: center;
+}
