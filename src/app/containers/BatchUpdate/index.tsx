@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Button } from 'reactstrap';
+import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Table } from 'reactstrap';
 import { connect } from 'react-redux';
 import { RootState } from 'core/reducers';
 import { fetchAllCourses } from 'core/actions';
@@ -54,10 +54,13 @@ class BatchUpdate extends React.Component<any, State> {
             coursesDropdownOpen: false,
             tasksValue: 'choose task',
             coursesValue: 'choose course',
+            tasksId: '',
+            coursesId: '',
             disabled: false,
             files: [],
             taskHeaders: [],
             errors: [],
+            checkedColumns: [],
         };
     }
 
@@ -79,9 +82,10 @@ class BatchUpdate extends React.Component<any, State> {
         });
     }
 
-    select = (event: any, dropdownName: string) => {
+    select = (event: any, dropdownName: string, id: string) => {
         this.setState({
-            [dropdownName]: event.target.innerText,
+            [dropdownName + 'Value']: event.target.innerText,
+            [dropdownName + 'Id']: id,
         });
     };
 
@@ -97,8 +101,12 @@ class BatchUpdate extends React.Component<any, State> {
     };
 
     saveTable = async () => {
+        const headers = this.state.taskHeaders.filter((header: any) => !this.state.checkedColumns.includes(header));
         const formData = new FormData();
         formData.set('table', this.state.files[0]);
+        formData.set('headers', headers.join('<|>'));
+        formData.set('coursesId', this.state.courseId);
+        formData.set('tasksId', this.state.taskId);
         const res = await axios.patch('/api/batch-update/save-table', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -106,6 +114,20 @@ class BatchUpdate extends React.Component<any, State> {
         });
         // console.log(res);
         this.setState({ errors: res.data.data.errors });
+    };
+
+    handleCheckboxChange = (event: any) => {
+        const column = event.target.id;
+
+        if (!this.state.checkedColumns.includes(column)) {
+            this.setState((prevState: any) => {
+                return { checkedColumns: prevState.checkedColumns.concat(column) };
+            });
+        } else {
+            this.setState((prevState: any) => {
+                return { checkedColumns: prevState.checkedColumns.filter((item: any) => item !== column) };
+            });
+        }
     };
 
     render() {
@@ -138,7 +160,7 @@ class BatchUpdate extends React.Component<any, State> {
                                     return (
                                         <DropdownItem
                                             key={course._id}
-                                            onClick={(event: any) => this.select(event, 'coursesValue')}
+                                            onClick={(event: any) => this.select(event, 'courses', course._id)}
                                         >
                                             {course.name}
                                         </DropdownItem>
@@ -158,7 +180,7 @@ class BatchUpdate extends React.Component<any, State> {
                                     return (
                                         <DropdownItem
                                             key={task._id}
-                                            onClick={(event: any) => this.select(event, 'tasksValue')}
+                                            onClick={(event: any) => this.select(event, 'tasks', task._id)}
                                         >
                                             {task.name}
                                         </DropdownItem>
@@ -173,12 +195,38 @@ class BatchUpdate extends React.Component<any, State> {
                         >
                             Parse xlsx
                         </Button>
-                        <ul>{this.state.taskHeaders.map((header: any) => <li key={header}>{header}</li>)}</ul>
                         <Button color="success" className={cn('action-button')} onClick={this.saveTable}>
                             Save table
                         </Button>
                         <ul>{this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}</ul>
                     </div>
+                </div>
+                <div className="row">
+                    <Table size="sm" striped={true}>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Table column name</th>
+                                <th>Check not to import column</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {this.state.taskHeaders.map((header: any, index: number) => (
+                                <tr key={header}>
+                                    <td>{index + 1}</td>
+                                    <td>{header}</td>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            name=""
+                                            id={header}
+                                            onChange={this.handleCheckboxChange}
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
                 </div>
             </div>
         );
