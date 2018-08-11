@@ -104,7 +104,7 @@ class BatchUpdate extends React.Component<any, State> {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        console.log(res);
+        // console.log(res);
         this.setState({ errors: res.data.data.errors });
     };
 
