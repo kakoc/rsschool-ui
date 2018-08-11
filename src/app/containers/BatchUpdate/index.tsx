@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Table } from 'reactstrap';
+import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Table, Alert } from 'reactstrap';
 import { connect } from 'react-redux';
 import { RootState } from 'core/reducers';
 import { fetchAllCourses } from 'core/actions';
@@ -130,6 +130,39 @@ class BatchUpdate extends React.Component<any, State> {
         }
     };
 
+    getContent = () => {
+        if (!this.state.errors.length) {
+            return (
+                <Table size="sm" striped={true}>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Table column name</th>
+                            <th>Check not to import column</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {this.state.taskHeaders.map((header: any, index: number) => (
+                            <tr key={header}>
+                                <td>{index + 1}</td>
+                                <td>{header}</td>
+                                <td>
+                                    <input type="checkbox" name="" id={header} onChange={this.handleCheckboxChange} />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            );
+        } else {
+            return (
+                <Alert color="danger">
+                    <ul>{this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}</ul>
+                </Alert>
+            );
+        }
+    };
+
     render() {
         return (
             <div className="container">
@@ -198,36 +231,9 @@ class BatchUpdate extends React.Component<any, State> {
                         <Button color="success" className={cn('action-button')} onClick={this.saveTable}>
                             Save table
                         </Button>
-                        <ul>{this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}</ul>
                     </div>
                 </div>
-                <div className="row">
-                    <Table size="sm" striped={true}>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Table column name</th>
-                                <th>Check not to import column</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {this.state.taskHeaders.map((header: any, index: number) => (
-                                <tr key={header}>
-                                    <td>{index + 1}</td>
-                                    <td>{header}</td>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            name=""
-                                            id={header}
-                                            onChange={this.handleCheckboxChange}
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </div>
+                <div className="row justify-content-md-center">{this.getContent()}</div>
             </div>
         );
     }
