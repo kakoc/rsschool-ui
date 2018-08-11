@@ -57,6 +57,7 @@ class BatchUpdate extends React.Component<any, State> {
             disabled: false,
             files: [],
             taskHeaders: [],
+            errors: [],
         };
     }
 
@@ -92,7 +93,19 @@ class BatchUpdate extends React.Component<any, State> {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        this.setState({ taskHeaders: res.data.data[0] });
+        this.setState({ taskHeaders: res.data.data });
+    };
+
+    saveTable = async () => {
+        const formData = new FormData();
+        formData.set('table', this.state.files[0]);
+        const res = await axios.patch('/api/batch-update/save-table', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        console.log(res);
+        this.setState({ errors: res.data.data.errors });
     };
 
     render() {
@@ -161,6 +174,10 @@ class BatchUpdate extends React.Component<any, State> {
                             Parse xlsx
                         </Button>
                         <ul>{this.state.taskHeaders.map((header: any) => <li key={header}>{header}</li>)}</ul>
+                        <Button color="success" className={cn('action-button')} onClick={this.saveTable}>
+                            Save table
+                        </Button>
+                        <ul>{this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}</ul>
                     </div>
                 </div>
             </div>
