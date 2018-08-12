@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Table, Alert } from 'reactstrap';
+import { Button, Table, Alert } from 'reactstrap';
 import { connect } from 'react-redux';
 import { RootState } from 'core/reducers';
 import { fetchAllCourses } from 'core/actions';
@@ -7,6 +7,7 @@ import { classNames } from 'core/styles';
 import { getCoursesNames } from 'core/selectors/courses';
 import Dropzone from 'react-dropzone';
 import axios from 'axios';
+import { Dropdown } from '../../components/Dropdown';
 // import { library } from '@fortawesome/fontawesome-svg-core';
 
 const cn = classNames(require('./index.scss'));
@@ -17,7 +18,7 @@ interface ITask {
 }
 
 const tasks: Array<ITask> = [
-    { _id: '1', name: 'Task 1' },
+    { _id: '1', name: 'JSCore Interview' },
     { _id: '2', name: 'Task 2' },
     { _id: '3', name: 'Task 3' },
     { _id: '4', name: 'Task 4' },
@@ -42,27 +43,22 @@ const mapDispatchToProps = (dispatch: any, props: any): any => {
 
 interface State {
     [key: string]: any;
+    // checkedColumns: Array<string>;
+    // taskHeaders: Array<string>;
+    selectedCourse: string;
+    selectedTask: string;
 }
 
 class BatchUpdate extends React.Component<any, State> {
-    constructor(props: any) {
-        super(props);
-
-        this.toggle = this.toggle.bind(this);
-        this.state = {
-            tasksDropdownOpen: false,
-            coursesDropdownOpen: false,
-            tasksValue: 'choose task',
-            coursesValue: 'choose course',
-            tasksId: '',
-            coursesId: '',
-            disabled: false,
-            files: [],
-            taskHeaders: [],
-            errors: [],
-            checkedColumns: [],
-        };
-    }
+    state: State = {
+        files: [],
+        taskHeaders: [],
+        errors: [],
+        checkedColumns: [],
+        savedStatus: '',
+        selectedCourse: '',
+        selectedTask: '',
+    };
 
     componentDidMount() {
         this.props.fetchCourses();
@@ -70,23 +66,11 @@ class BatchUpdate extends React.Component<any, State> {
     }
 
     onDrop = (files: any) => {
-        this.setState({
-            files,
-            disabled: true,
-        });
-    };
-
-    toggle(dropdownName: string) {
-        this.setState({
-            [dropdownName]: !this.state[dropdownName],
-        });
-    }
-
-    select = (event: any, dropdownName: string, id: string) => {
-        this.setState({
-            [dropdownName + 'Value']: event.target.innerText,
-            [dropdownName + 'Id']: id,
-        });
+        if (/\.xlsx$/.test(files[0].name)) {
+            this.setState({
+                files,
+            });
+        }
     };
 
     parseTable = async () => {
@@ -105,15 +89,19 @@ class BatchUpdate extends React.Component<any, State> {
         const formData = new FormData();
         formData.set('table', this.state.files[0]);
         formData.set('headers', headers.join('<|>'));
-        formData.set('coursesId', this.state.courseId);
-        formData.set('tasksId', this.state.taskId);
+        formData.set('courseId', this.state.selectedCourse);
+        formData.set('taskId', this.state.selectedTask);
         const res = await axios.patch('/api/batch-update/save-table', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
         // console.log(res);
-        this.setState({ errors: res.data.data.errors });
+        if (res.data.data.errors) {
+            this.setState({ errors: res.data.data.errors });
+        } else {
+            this.setState({ savedStatus: res.data.data });
+        }
     };
 
     handleCheckboxChange = (event: any) => {
@@ -167,65 +155,31 @@ class BatchUpdate extends React.Component<any, State> {
         return (
             <div className="container">
                 <div className="row justify-content-md-center">
-                    <Dropzone
-                        className={
-                            'col-sm-6 ' + (this.state.disabled ? cn('dropzone-area--disabled') : cn('dropzone-area'))
-                        }
-                        onDrop={this.onDrop}
-                        disabled={this.state.disabled}
-                    >
-                        {this.state.disabled ? (
+                    <Dropzone className={'col-sm-6 ' + cn('dropzone-area')} onDrop={this.onDrop}>
+                        {this.state.files.length ? (
                             <p>{this.state.files[0].name}</p>
                         ) : (
                             <p>Try dropping some files here, or click to select files to upload.</p>
                         )}
                     </Dropzone>
                     <div className={cn('control-buttons') + ' col-sm-4'}>
-                        <ButtonDropdown
-                            isOpen={this.state.coursesDropdownOpen}
-                            toggle={this.toggle.bind(this, 'coursesDropdownOpen')}
-                        >
-                            <DropdownToggle className={cn('action-button')} color="primary" caret={true}>
-                                {this.state.coursesValue}
-                            </DropdownToggle>
-                            <DropdownMenu>
-                                {this.props.courses.map((course: any) => {
-                                    return (
-                                        <DropdownItem
-                                            key={course._id}
-                                            onClick={(event: any) => this.select(event, 'courses', course._id)}
-                                        >
-                                            {course.name}
-                                        </DropdownItem>
-                                    );
-                                })}
-                            </DropdownMenu>
-                        </ButtonDropdown>
-                        <ButtonDropdown
-                            isOpen={this.state.tasksDropdownOpen}
-                            toggle={this.toggle.bind(this, 'tasksDropdownOpen')}
-                        >
-                            <DropdownToggle className={cn('action-button')} color="primary" caret={true}>
-                                {this.state.tasksValue}
-                            </DropdownToggle>
-                            <DropdownMenu>
-                                {this.props.tasks.map((task: any) => {
-                                    return (
-                                        <DropdownItem
-                                            key={task._id}
-                                            onClick={(event: any) => this.select(event, 'tasks', task._id)}
-                                        >
-                                            {task.name}
-                                        </DropdownItem>
-                                    );
-                                })}
-                            </DropdownMenu>
-                        </ButtonDropdown>
-                        <Button
-                            color="success"
-                            className={cn('action-button') + (this.state.files.length ? '' : ' disabled')}
-                            onClick={this.parseTable}
-                        >
+                        <Dropdown
+                            defaultValue="Select Course"
+                            onSelect={(course: any) => this.setState({ selectedCourse: course.id })}
+                            menuItems={this.props.courses.map((course: any) => ({
+                                id: course._id,
+                                value: course.name,
+                            }))}
+                        />
+                        <Dropdown
+                            defaultValue="Select Task"
+                            onSelect={(task: any) => this.setState({ selectedTask: task.id })}
+                            menuItems={this.props.tasks.map((task: any) => ({
+                                id: task._id,
+                                value: task.name,
+                            }))}
+                        />
+                        <Button color="success" className={cn('action-button')} onClick={this.parseTable}>
                             Parse xlsx
                         </Button>
                         <Button color="success" className={cn('action-button')} onClick={this.saveTable}>
@@ -233,7 +187,13 @@ class BatchUpdate extends React.Component<any, State> {
                         </Button>
                     </div>
                 </div>
-                <div className="row justify-content-md-center">{this.getContent()}</div>
+                <div className="row justify-content-md-center">
+                    {this.state.savedStatus ? (
+                        <Button color="success">{this.state.savedStatus}</Button>
+                    ) : (
+                        this.getContent()
+                    )}
+                </div>
             </div>
         );
     }
