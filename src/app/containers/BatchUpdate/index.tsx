@@ -44,13 +44,13 @@ const mapDispatchToProps = (dispatch: any, props: any): any => {
 
 interface State {
     [key: string]: any;
-    // checkedColumns: Array<string>;
+    // selectedColumns: Array<string>;
     // taskHeaders: Array<string>;
     selectedCourse: string;
     selectedTask: string;
 }
 
-const TaskUpdateTable = ({ taskHeaders, checkedColumns, handleCheckboxChange }: any) => {
+const TaskUpdateTable = ({ taskHeaders, selectedRows, handleCheckboxChange }: any) => {
     return (
         <ReactTable
             className="-highlight"
@@ -73,7 +73,7 @@ const TaskUpdateTable = ({ taskHeaders, checkedColumns, handleCheckboxChange }: 
                         <input
                             type="checkbox"
                             id={header}
-                            checked={checkedColumns.includes(header)}
+                            checked={selectedRows.includes(header)}
                             style={{ cursor: 'pointer' }}
                         />
                     ),
@@ -97,7 +97,7 @@ class BatchUpdate extends React.Component<any, State> {
         files: [],
         taskHeaders: [],
         errors: [],
-        checkedColumns: [],
+        selectedColumns: [],
         selectedCourse: '',
         selectedTask: '',
         isWorkWithTableDisabled: true,
@@ -115,6 +115,7 @@ class BatchUpdate extends React.Component<any, State> {
             this.setState({
                 files,
                 errors: [],
+                selectedColumns: [],
                 isTableParsed: false,
                 taskHeaders: [],
                 isTableSaved: false,
@@ -130,11 +131,18 @@ class BatchUpdate extends React.Component<any, State> {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        this.setState({ taskHeaders: res.data.data, isTableParsed: true });
+
+        this.setState({
+            taskHeaders: res.data.data,
+            isTableParsed: true,
+            errors: [],
+            selectedColumns: [],
+            isTableSaved: false,
+        });
     };
 
     getTaskColumnsForSaving = () => {
-        return this.state.taskHeaders.filter((header: any) => !this.state.checkedColumns.includes(header));
+        return this.state.taskHeaders.filter((header: any) => !this.state.selectedColumns.includes(header));
     };
 
     prepareFormDataForSaving = () => {
@@ -165,13 +173,13 @@ class BatchUpdate extends React.Component<any, State> {
     };
 
     setIgnoredColumns = (column: any) => {
-        if (!this.state.checkedColumns.includes(column)) {
+        if (!this.state.selectedColumns.includes(column)) {
             this.setState((prevState: any) => {
-                return { checkedColumns: prevState.checkedColumns.concat(column) };
+                return { selectedColumns: prevState.selectedColumns.concat(column) };
             });
         } else {
             this.setState((prevState: any) => {
-                return { checkedColumns: prevState.checkedColumns.filter((item: any) => item !== column) };
+                return { selectedColumns: prevState.selectedColumns.filter((item: any) => item !== column) };
             });
         }
     };
@@ -212,7 +220,12 @@ class BatchUpdate extends React.Component<any, State> {
                     </div>
                 </div>
                 <div className="row justify-content-md-center">
-                    <Dropzone className={cn('dropzone-area')} onDrop={this.setTable} style={{ cursor: 'pointer' }}>
+                    <Dropzone
+                        className={cn('dropzone-area')}
+                        onDrop={this.setTable}
+                        activeStyle={{ borderColor: 'black', color: 'black' }}
+                        style={this.state.files.length && { borderColor: 'black', color: 'black' }}
+                    >
                         {this.state.files.length ? (
                             <p>{this.state.files[0].name}</p>
                         ) : (
@@ -258,7 +271,7 @@ class BatchUpdate extends React.Component<any, State> {
                         !!this.state.taskHeaders.length && (
                             <TaskUpdateTable
                                 taskHeaders={this.state.taskHeaders}
-                                checkedColumns={this.state.checkedColumns}
+                                selectedRows={this.state.selectedColumns}
                                 handleCheckboxChange={this.setIgnoredColumns}
                             />
                         )

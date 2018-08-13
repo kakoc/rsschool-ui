@@ -38,7 +38,11 @@ class Dropdown extends React.Component<any, any> {
                 <DropdownMenu>
                     {this.props.menuItems.map((item: any) => {
                         return (
-                            <DropdownItem key={item.id} onClick={() => this.select(item)}>
+                            <DropdownItem
+                                className={cn('action-button')}
+                                key={item.id}
+                                onClick={() => this.select(item)}
+                            >
                                 {item.value}
                             </DropdownItem>
                         );
