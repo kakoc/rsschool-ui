@@ -98,9 +98,11 @@ class BatchUpdate extends React.Component<any, State> {
         taskHeaders: [],
         errors: [],
         checkedColumns: [],
-        savedStatus: '',
         selectedCourse: '',
         selectedTask: '',
+        isWorkWithTableDisabled: true,
+        isTableParsed: false,
+        isTableSaved: false,
     };
 
     componentDidMount() {
@@ -108,11 +110,14 @@ class BatchUpdate extends React.Component<any, State> {
         // this.props.fetchTasks();
     }
 
-    onDrop = (files: any) => {
+    setTable = (files: any) => {
         if (/\.xlsx$/.test(files[0].name)) {
             this.setState({
                 files,
                 errors: [],
+                isTableParsed: false,
+                taskHeaders: [],
+                isTableSaved: false,
             });
         }
     };
@@ -125,16 +130,27 @@ class BatchUpdate extends React.Component<any, State> {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        this.setState({ taskHeaders: res.data.data });
+        this.setState({ taskHeaders: res.data.data, isTableParsed: true });
     };
 
-    saveTable = async () => {
-        const headers = this.state.taskHeaders.filter((header: any) => !this.state.checkedColumns.includes(header));
+    getTaskColumnsForSaving = () => {
+        return this.state.taskHeaders.filter((header: any) => !this.state.checkedColumns.includes(header));
+    };
+
+    prepareFormDataForSaving = () => {
+        const headers = this.getTaskColumnsForSaving();
         const formData = new FormData();
         formData.set('table', this.state.files[0]);
         formData.set('headers', headers.join('<|>'));
         formData.set('courseId', this.state.selectedCourse);
         formData.set('taskId', this.state.selectedTask);
+
+        return formData;
+    };
+
+    saveTable = async () => {
+        const formData = this.prepareFormDataForSaving();
+
         const res = await axios.patch('/api/batch-update/save-table', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -144,11 +160,11 @@ class BatchUpdate extends React.Component<any, State> {
         if (res.data.data.errors) {
             this.setState({ errors: res.data.data.errors });
         } else {
-            this.setState({ savedStatus: res.data.data });
+            this.setState({ isTableSaved: true });
         }
     };
 
-    handleCheckboxChange = (column: any) => {
+    setIgnoredColumns = (column: any) => {
         if (!this.state.checkedColumns.includes(column)) {
             this.setState((prevState: any) => {
                 return { checkedColumns: prevState.checkedColumns.concat(column) };
@@ -160,55 +176,90 @@ class BatchUpdate extends React.Component<any, State> {
         }
     };
 
+    checkMainInfoSelection = () => {
+        if (this.state.selectedCourse && this.state.selectedTask) {
+            this.setState({ isWorkWithTableDisabled: false });
+        }
+    };
+
     render() {
         return (
             <div className="container">
                 <div className="row justify-content-md-center">
-                    <Dropzone className={'col-sm-6 ' + cn('dropzone-area')} onDrop={this.onDrop}>
-                        {this.state.files.length ? (
-                            <p>{this.state.files[0].name}</p>
-                        ) : (
-                            <p>Try dropping some files here, or click to select files to upload.</p>
-                        )}
-                    </Dropzone>
-                    <div className={cn('control-buttons') + ' col-sm-4'}>
+                    <div className="col-md-3">
                         <Dropdown
                             defaultValue="Select Course"
-                            onSelect={(course: any) => this.setState({ selectedCourse: course.id })}
+                            onSelect={(course: any) =>
+                                this.setState({ selectedCourse: course.id }, () => this.checkMainInfoSelection())
+                            }
                             menuItems={this.props.courses.map((course: any) => ({
                                 id: course._id,
                                 value: course.name,
                             }))}
                         />
+                    </div>
+                    <div className="col-md-3">
                         <Dropdown
                             defaultValue="Select Task"
-                            onSelect={(task: any) => this.setState({ selectedTask: task.id })}
+                            onSelect={(task: any) =>
+                                this.setState({ selectedTask: task.id }, () => this.checkMainInfoSelection())
+                            }
                             menuItems={this.props.tasks.map((task: any) => ({
                                 id: task._id,
                                 value: task.name,
                             }))}
                         />
-                        <Button color="success" className={cn('action-button')} onClick={this.parseTable}>
-                            Parse xlsx
+                    </div>
+                </div>
+                <div className="row justify-content-md-center">
+                    <Dropzone className={cn('dropzone-area')} onDrop={this.setTable} style={{ cursor: 'pointer' }}>
+                        {this.state.files.length ? (
+                            <p>{this.state.files[0].name}</p>
+                        ) : (
+                            <p>Try dropping some file here, or click to select file to upload.</p>
+                        )}
+                    </Dropzone>
+                </div>
+                <div className="row justify-content-md-center">
+                    <div className={cn('control-buttons') + ' col-md-3'}>
+                        <Button
+                            disabled={this.state.isWorkWithTableDisabled || !this.state.files.length}
+                            color="success"
+                            className={cn('action-button')}
+                            onClick={this.parseTable}
+                        >
+                            Parse table
                         </Button>
-                        <Button color="success" className={cn('action-button')} onClick={this.saveTable}>
+                    </div>
+                    <div className={cn('control-buttons') + ' col-md-3'}>
+                        <Button
+                            disabled={this.state.isWorkWithTableDisabled || !this.state.isTableParsed}
+                            color="success"
+                            className={cn('action-button')}
+                            onClick={this.saveTable}
+                        >
                             Save table
                         </Button>
                     </div>
                 </div>
-                <div className="row justify-content-lg-center">
+
+                <div className={'row justify-content-lg-center'} style={{ marginTop: '20px' }}>
                     {!!this.state.errors.length ? (
-                        <Alert color="danger">
-                            <ul>
-                                {this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}
-                            </ul>
-                        </Alert>
+                        <div className="row justify-content-md-center">
+                            <Alert color="danger">
+                                <ul className={cn('errors')}>
+                                    {this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}
+                                </ul>
+                            </Alert>
+                        </div>
+                    ) : this.state.isTableSaved ? (
+                        <Alert color="success">Table was successfully saved!</Alert>
                     ) : (
                         !!this.state.taskHeaders.length && (
                             <TaskUpdateTable
                                 taskHeaders={this.state.taskHeaders}
                                 checkedColumns={this.state.checkedColumns}
-                                handleCheckboxChange={this.handleCheckboxChange}
+                                handleCheckboxChange={this.setIgnoredColumns}
                             />
                         )
                     )}
