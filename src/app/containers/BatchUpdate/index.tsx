@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Button, Table, Alert } from 'reactstrap';
+import { Button, Alert } from 'reactstrap';
+import ReactTable from 'react-table';
 import { connect } from 'react-redux';
 import { RootState } from 'core/reducers';
 import { fetchAllCourses } from 'core/actions';
@@ -49,6 +50,48 @@ interface State {
     selectedTask: string;
 }
 
+const TaskUpdateTable = ({ taskHeaders, checkedColumns, handleCheckboxChange }: any) => {
+    return (
+        <ReactTable
+            className="-highlight"
+            style={{ cursor: 'pointer' }}
+            columns={[
+                { Header: '№', accessor: 'nRow', maxWidth: 50, style: { textAlign: 'center' } },
+                { Header: 'Task columns', accessor: 'header', width: 400 },
+                {
+                    Header: 'No import columns',
+                    accessor: 'checkbox',
+                    minWidth: 200,
+                    style: { textAlign: 'center' },
+                },
+            ]}
+            data={taskHeaders.map((header: string, i: number) => {
+                return {
+                    nRow: i + 1,
+                    header,
+                    checkbox: (
+                        <input
+                            type="checkbox"
+                            id={header}
+                            checked={checkedColumns.includes(header)}
+                            style={{ cursor: 'pointer' }}
+                        />
+                    ),
+                };
+            })}
+            showPagination={false}
+            defaultPageSize={taskHeaders.length}
+            getTdProps={(_: any, rowInfo: any) => {
+                return {
+                    onClick: () => {
+                        handleCheckboxChange(rowInfo.original.header);
+                    },
+                };
+            }}
+        />
+    );
+};
+
 class BatchUpdate extends React.Component<any, State> {
     state: State = {
         files: [],
@@ -69,6 +112,7 @@ class BatchUpdate extends React.Component<any, State> {
         if (/\.xlsx$/.test(files[0].name)) {
             this.setState({
                 files,
+                errors: [],
             });
         }
     };
@@ -104,9 +148,7 @@ class BatchUpdate extends React.Component<any, State> {
         }
     };
 
-    handleCheckboxChange = (event: any) => {
-        const column = event.target.id;
-
+    handleCheckboxChange = (column: any) => {
         if (!this.state.checkedColumns.includes(column)) {
             this.setState((prevState: any) => {
                 return { checkedColumns: prevState.checkedColumns.concat(column) };
@@ -115,39 +157,6 @@ class BatchUpdate extends React.Component<any, State> {
             this.setState((prevState: any) => {
                 return { checkedColumns: prevState.checkedColumns.filter((item: any) => item !== column) };
             });
-        }
-    };
-
-    getContent = () => {
-        if (!this.state.errors.length) {
-            return (
-                <Table size="sm" striped={true}>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Table column name</th>
-                            <th>Check not to import column</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {this.state.taskHeaders.map((header: any, index: number) => (
-                            <tr key={header}>
-                                <td>{index + 1}</td>
-                                <td>{header}</td>
-                                <td>
-                                    <input type="checkbox" name="" id={header} onChange={this.handleCheckboxChange} />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            );
-        } else {
-            return (
-                <Alert color="danger">
-                    <ul>{this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}</ul>
-                </Alert>
-            );
         }
     };
 
@@ -187,11 +196,21 @@ class BatchUpdate extends React.Component<any, State> {
                         </Button>
                     </div>
                 </div>
-                <div className="row justify-content-md-center">
-                    {this.state.savedStatus ? (
-                        <Button color="success">{this.state.savedStatus}</Button>
+                <div className="row justify-content-lg-center">
+                    {!!this.state.errors.length ? (
+                        <Alert color="danger">
+                            <ul>
+                                {this.state.errors.map((error: any, i: number) => <li key={error + i}>{error}</li>)}
+                            </ul>
+                        </Alert>
                     ) : (
-                        this.getContent()
+                        !!this.state.taskHeaders.length && (
+                            <TaskUpdateTable
+                                taskHeaders={this.state.taskHeaders}
+                                checkedColumns={this.state.checkedColumns}
+                                handleCheckboxChange={this.handleCheckboxChange}
+                            />
+                        )
                     )}
                 </div>
             </div>
