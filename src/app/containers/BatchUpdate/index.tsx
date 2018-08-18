@@ -156,12 +156,23 @@ class BatchUpdate extends React.Component<any, State> {
             },
         });
 
-        this.setState({
-            isTableParsed: true,
-            errors: [],
-            tableColumns: this.makeTableColumns(res.data.data),
-            isTableSaved: false,
-        });
+        this.setStateAfterParsing(res.data.data);
+    };
+
+    setStateAfterParsing = (data: any) => {
+        // clear table dropdowns before
+        this.setState(
+            {
+                tableColumns: {},
+            },
+            () =>
+                this.setState({
+                    isTableParsed: true,
+                    errors: [],
+                    tableColumns: this.makeTableColumns(data),
+                    isTableSaved: false,
+                }),
+        );
     };
 
     makeTableColumns = (columnsNames: any): ITableColumns => {
@@ -187,7 +198,7 @@ class BatchUpdate extends React.Component<any, State> {
 
     prepareFormDataForSaving = () => {
         const headers = this.getTaskColumnsForSaving();
-        // console.log(headers);
+
         const formData = new FormData();
         formData.set('table', this.state.files[0]);
         formData.set('headers', JSON.stringify(headers));
