@@ -31,6 +31,7 @@ class Dropdown extends React.Component<any, any> {
             <ButtonDropdown
                 isOpen={this.state.isOpen}
                 toggle={() => this.setState((prevState: any) => ({ isOpen: !prevState.isOpen }))}
+                className={cn('control-buttons')}
             >
                 <DropdownToggle className={cn('action-button')} color="primary" caret={true}>
                     {this.state.currentValue ? this.state.currentValue : this.state.defaultValue}

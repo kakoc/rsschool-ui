@@ -55,7 +55,7 @@ const TaskUpdateTable = ({ rows: { dropdown, ...rows }, handleClick }: any) => {
                         <Dropdown
                             defaultValue="Select field"
                             onSelect={(field: any) => handleClick(row, 'assignmentsField', field.value)}
-                            menuItems={dropdown.map((field: any) => ({
+                            menuItems={dropdown.map((field: string) => ({
                                 id: field,
                                 value: field,
                             }))}
@@ -269,7 +269,7 @@ class BatchUpdate extends React.Component<any, State> {
         return (
             <div className="container">
                 <div className="row justify-content-md-center">
-                    <div className={cn('control-buttons') + ' col-md-3'}>
+                    <div className="col-md-3">
                         <Dropdown
                             defaultValue="Select Course"
                             onSelect={(course: any) => this.setState({ selectedCourse: course.id })}
@@ -279,7 +279,7 @@ class BatchUpdate extends React.Component<any, State> {
                             }))}
                         />
                     </div>
-                    <div className={cn('control-buttons') + ' col-md-3'}>
+                    <div className="col-md-3">
                         <Dropdown
                             defaultValue="Select Task"
                             onSelect={(task: any) => this.setState({ selectedTask: task.id })}

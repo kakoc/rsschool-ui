@@ -4,3 +4,9 @@
     cursor: pointer;
   }
 }
+.control-buttons {
+  display: flex;
+  align-content: space-around;
+  flex-wrap: wrap;
+  justify-content: center;
+}
