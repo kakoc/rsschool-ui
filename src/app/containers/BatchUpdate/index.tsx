@@ -1,56 +1,22 @@
 import * as React from 'react';
-import { Button, Alert } from 'reactstrap';
-import ReactTable from 'react-table';
 import { connect } from 'react-redux';
+import ReactTable from 'react-table';
+import { Button, Alert } from 'reactstrap';
+import Dropzone from 'react-dropzone';
+import axios from 'axios';
+
 import { RootState } from 'core/reducers';
 import { fetchAllCourses } from 'core/actions';
 import { classNames } from 'core/styles';
 import { getCoursesNames } from 'core/selectors/courses';
-import Dropzone from 'react-dropzone';
-import axios from 'axios';
-import { Dropdown } from '../../components/Dropdown';
-// import { library } from '@fortawesome/fontawesome-svg-core';
+
+import { Dropdown } from 'components/Dropdown';
+
+import * as tmp from './tmp';
 
 const cn = classNames(require('./index.scss'));
 
-interface ITask {
-    _id: string;
-    name: string;
-}
-
-const tasks: Array<ITask> = [
-    { _id: '1', name: 'JSCore Interview' },
-    { _id: '2', name: 'Task 2' },
-    { _id: '3', name: 'Task 3' },
-    { _id: '4', name: 'Task 4' },
-];
-
-const columns = ['studentId', 'mentorId', 'score', 'checkDate', 'mentorComment'];
-
-const mapStateToProps = (state: RootState, props: any): any => {
-    return {
-        ...props,
-        courses: getCoursesNames(state.courses.data),
-        tasks: tasks,
-    };
-};
-
-const mapDispatchToProps = (dispatch: any, props: any): any => {
-    return {
-        ...props,
-        fetchCourses: () => {
-            dispatch(fetchAllCourses());
-        },
-    };
-};
-
-interface State {
-    [key: string]: any;
-    // selectedCourse: string;
-    // selectedTask: string;
-}
-
-const TaskUpdateTable = ({ rows, handleClick }: any) => {
+const TaskUpdateTable = ({ rows: { dropdown, ...rows }, handleClick }: any) => {
     const cellStyle = { textAlign: 'center', alignSelf: 'center' };
     return (
         <ReactTable
@@ -72,7 +38,7 @@ const TaskUpdateTable = ({ rows, handleClick }: any) => {
                 },
                 { Header: 'Select field', accessor: 'dropdown', style: cellStyle, minWidth: 300 },
             ]}
-            data={Object.keys(rows).map((row: any, i: number) => {
+            data={Object.keys(rows).map((row: string, i: number) => {
                 return {
                     nRow: i + 1,
                     header: rows[row].tableColumn,
@@ -89,9 +55,9 @@ const TaskUpdateTable = ({ rows, handleClick }: any) => {
                         <Dropdown
                             defaultValue="Select field"
                             onSelect={(field: any) => handleClick(row, 'assignmentsField', field.value)}
-                            menuItems={columns.map((column: any) => ({
-                                id: column,
-                                value: column,
+                            menuItems={dropdown.map((field: any) => ({
+                                id: field,
+                                value: field,
                             }))}
                         />
                     ),
@@ -115,6 +81,43 @@ const TaskUpdateTable = ({ rows, handleClick }: any) => {
     );
 };
 
+const mapStateToProps = (state: RootState, props: any): any => {
+    return {
+        ...props,
+        courses: getCoursesNames(state.courses.data),
+        tasks: tmp.tasks,
+    };
+};
+const mapDispatchToProps = (dispatch: any, props: any): any => {
+    return {
+        ...props,
+        fetchCourses: () => {
+            dispatch(fetchAllCourses());
+        },
+        fetchTasks: () => {},
+    };
+};
+
+interface ITableColumn {
+    isIgnored?: boolean;
+    tableColumn: string;
+    assignmentsField: string;
+}
+
+interface ITableColumns {
+    [key: number]: ITableColumn;
+}
+
+interface State {
+    files: Array<any>;
+    errors: Array<string>;
+    tableColumns: ITableColumns;
+    selectedCourse: string;
+    selectedTask: string;
+    isTableParsed: boolean;
+    isTableSaved: boolean;
+}
+
 class BatchUpdate extends React.Component<any, State> {
     state: State = {
         files: [],
@@ -128,10 +131,11 @@ class BatchUpdate extends React.Component<any, State> {
 
     componentDidMount() {
         this.props.fetchCourses();
-        // this.props.fetchTasks();
+        // TODO when tasks will be added
+        this.props.fetchTasks();
     }
 
-    setTable = (files: any) => {
+    setTable = (files: any): void => {
         if (/\.xlsx$/.test(files[0].name)) {
             this.setState({
                 files,
@@ -143,7 +147,7 @@ class BatchUpdate extends React.Component<any, State> {
         }
     };
 
-    parseTable = async () => {
+    parseTable = async (): Promise<any> => {
         const formData = new FormData();
         formData.set('table', this.state.files[0]);
         const res = await axios.post('/api/batch-update/parse-table', formData, {
@@ -155,35 +159,35 @@ class BatchUpdate extends React.Component<any, State> {
         this.setState({
             isTableParsed: true,
             errors: [],
-            tableColumns: res.data.data.reduce(
-                (acc: any, el: any, i: any) => ({
-                    ...acc,
-                    [i]: { tableColumn: el, isIgnored: false, assignmentsField: null },
-                }),
-                {},
-            ),
+            tableColumns: this.makeTableColumns(res.data.data),
             isTableSaved: false,
         });
     };
 
-    getTaskColumnsForSaving = () => {
-        const { tableColumns } = this.state;
-        const columns = Object.keys(tableColumns);
-        return columns.reduce(
-            (needColumns: any, column: any) =>
-                !this.state.tableColumns[column].isIgnored
-                    ? {
-                          ...needColumns,
-                          [tableColumns[column].tableColumn]: tableColumns[column].assignmentsField,
-                      }
-                    : { ...needColumns },
+    makeTableColumns = (columnsNames: any): ITableColumns => {
+        return columnsNames.reduce(
+            (tableColumns: any, column: any, i: number) => ({
+                ...tableColumns,
+                [i]: { tableColumn: column, isIgnored: false, assignmentsField: null },
+            }),
             {},
         );
     };
 
+    getTaskColumnsForSaving = (): ITableColumns => {
+        const { tableColumns } = this.state;
+        return Object.keys(tableColumns).reduce((needColumns: any, column: any) => {
+            if (!tableColumns[column].isIgnored) {
+                const { isIgnored, ...rest } = tableColumns[column];
+                return { ...needColumns, [column]: { ...rest } };
+            }
+            return { ...needColumns };
+        }, {});
+    };
+
     prepareFormDataForSaving = () => {
         const headers = this.getTaskColumnsForSaving();
-        // console.log(JSON.stringify(headers));
+        // console.log(headers);
         const formData = new FormData();
         formData.set('table', this.state.files[0]);
         formData.set('headers', JSON.stringify(headers));
@@ -193,7 +197,7 @@ class BatchUpdate extends React.Component<any, State> {
         return formData;
     };
 
-    saveTable = async () => {
+    saveTable = async (): Promise<any> => {
         const formData = this.prepareFormDataForSaving();
 
         const res = await axios.patch('/api/batch-update/save-table', formData, {
@@ -201,15 +205,15 @@ class BatchUpdate extends React.Component<any, State> {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        // console.log(res);
+
         if (res.data.data.errors) {
             this.setState({ errors: res.data.data.errors });
         } else {
-            this.setState({ isTableSaved: true });
+            this.setState({ isTableSaved: true, errors: [] });
         }
     };
 
-    addColumnInfo = (index: any, field: any, value: any) => {
+    addColumnInfo = (index: number, field: string, value: string) => {
         this.setState({
             tableColumns: {
                 ...this.state.tableColumns,
@@ -217,9 +221,9 @@ class BatchUpdate extends React.Component<any, State> {
             },
         });
     };
-    checkColumnsFulfilling = () => {
+    checkColumnsFulfilling = (): boolean => {
         for (const key of Object.keys(this.state.tableColumns)) {
-            const field = this.state.tableColumns[key];
+            const field = this.state.tableColumns[parseInt(key, 10)];
             if (!field.isIgnored && !field.assignmentsField) {
                 return false;
             }
@@ -227,21 +231,21 @@ class BatchUpdate extends React.Component<any, State> {
         return true;
     };
 
-    checkMainInfoSelection = () => {
-        return this.state.selectedCourse && this.state.selectedTask;
+    checkMainInfoSelection = (): boolean => {
+        return !!(this.state.selectedCourse && this.state.selectedTask);
     };
 
-    isReadyForParsing = () => {
+    isReadyForParsing = (): boolean => {
         return this.checkMainInfoSelection() && !!this.state.files.length;
     };
 
-    isReadyForSaving = () => {
+    isReadyForSaving = (): boolean => {
         return (
             this.isReadyForParsing() && !!Object.keys(this.state.tableColumns).length && this.checkColumnsFulfilling()
         );
     };
 
-    isErrors = () => {
+    isErrors = (): boolean => {
         return !!this.state.errors.length;
     };
 
@@ -265,7 +269,7 @@ class BatchUpdate extends React.Component<any, State> {
         return (
             <div className="container">
                 <div className="row justify-content-md-center">
-                    <div className="col-md-3">
+                    <div className={cn('control-buttons') + ' col-md-3'}>
                         <Dropdown
                             defaultValue="Select Course"
                             onSelect={(course: any) => this.setState({ selectedCourse: course.id })}
@@ -275,7 +279,7 @@ class BatchUpdate extends React.Component<any, State> {
                             }))}
                         />
                     </div>
-                    <div className="col-md-3">
+                    <div className={cn('control-buttons') + ' col-md-3'}>
                         <Dropdown
                             defaultValue="Select Task"
                             onSelect={(task: any) => this.setState({ selectedTask: task.id })}
@@ -328,7 +332,10 @@ class BatchUpdate extends React.Component<any, State> {
                 </div>
                 <div className={'row justify-content-lg-center'} style={{ marginTop: '20px' }}>
                     {this.state.isTableParsed && (
-                        <TaskUpdateTable rows={this.state.tableColumns} handleClick={this.addColumnInfo} />
+                        <TaskUpdateTable
+                            rows={{ ...this.state.tableColumns, dropdown: Object.values(tmp.AssignmentsType) }}
+                            handleClick={this.addColumnInfo}
+                        />
                     )}
                 </div>
             </div>
