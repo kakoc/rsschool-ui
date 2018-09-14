@@ -1,34 +1,43 @@
 .action-button {
-  width: 240px;
+    width: 240px;
 }
 
-.dropzone-area--disabled, 
+.dropzone-area--disabled,
 .dropzone-area {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  border-width: 2px;
-  border-color: gray;
-  border-style: dashed;
-  border-radius: 5px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  cursor: pointer;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    border-width: 2px;
+    border-color: gray;
+    border-style: dashed;
+    border-radius: 5px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    cursor: pointer;
 }
 
 .dropzone-area--disabled {
-  opacity: 0.5;
+    opacity: 0.5;
+}
+
+.black-area {
+    border-color: black;
+    color: black;
 }
 
 .control-buttons {
-  display: flex;
-  align-content: space-around;
-  flex-wrap: wrap;
-  justify-content: center;
+    display: flex;
+    align-content: space-around;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .errors {
     margin: 0;
+}
+
+.top-margin {
+    margin-top: 20px;
 }

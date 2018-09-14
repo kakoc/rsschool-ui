@@ -65,3 +65,48 @@ export interface Action<T> extends AnyAction {
     type: string;
     payload?: T;
 }
+
+export function getNotPresented(where: any[], who: any[]) {
+    return who.filter((v: any) => !where.includes(v));
+}
+
+export function readFile(file: any, readingFinished: any) {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+        const bytes = new Uint8Array(e.target.result);
+        const length = bytes.byteLength;
+
+        let binary = '';
+        for (let i = 0; i < length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+
+        readingFinished(binary);
+    };
+
+    // reader.onabort = () => {};
+    // reader.onerror = () => {};
+    reader.readAsArrayBuffer(file);
+}
+
+export function checkExtension(fileName: string, extension: string): boolean {
+    const regExp = new RegExp(`\.${extension}$`);
+
+    return regExp.test(fileName);
+}
+
+export function isPromise(maybePromise: any) {
+    return maybePromise instanceof Promise;
+}
+
+export function handleIfPromise(maybePromise: any, action: any) {
+    if (isPromise(maybePromise)) {
+        return maybePromise.then((data: any) => action(data));
+    } else {
+        return action(maybePromise);
+    }
+}
+
+export function clearFromDuplications(data: any[]) {
+    return Array.from(new Set(data));
+}

@@ -1,3 +1,8 @@
+export enum Roles {
+    student = 'student',
+    mentor = 'mentor',
+}
+
 export interface IProfile {
     city: string;
     emails: Array<{ value: string; type: string | undefined }>;

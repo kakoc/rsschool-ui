@@ -1,3 +1,8 @@
+import * as utils from './utils';
+export { utils };
+
+export * from './batchUpdate';
+
 import isUrl = require('is-url');
 
 export const requiredFieldError = (value?: string) => {
