@@ -42,8 +42,7 @@ export function mergeMentorComments(taskResult: string[], mentorComments: any): 
 function setField(field: any, value: any) {
     switch (field) {
         case AssignmentsType.studentId:
-        case AssignmentsType.mentorId:
-        case AssignmentsType.score: {
+        case AssignmentsType.mentorId: {
             return { [field]: value };
         }
         case AssignmentsType.checkDate: {
@@ -54,6 +53,9 @@ function setField(field: any, value: any) {
         }
         case AssignmentsType.mentorComment: {
             return { [field]: true };
+        }
+        case AssignmentsType.score: {
+            return { [field]: parseInt(value, 10) };
         }
     }
 }
