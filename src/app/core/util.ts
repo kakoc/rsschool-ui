@@ -84,8 +84,11 @@ export function readFile(file: any, readingFinished: any) {
         readingFinished(binary);
     };
 
-    // reader.onabort = () => {};
-    // reader.onerror = () => {};
+    /*
+        tbd
+        reader.onabort = () => {};
+        reader.onerror = () => {};
+    */
     reader.readAsArrayBuffer(file);
 }
 

@@ -32,7 +32,7 @@ export function getMentorCommentsColumns(needColumns: any): any {
 
 export function mergeMentorComments(taskResult: string[], mentorComments: any): string {
     return Object.keys(mentorComments).reduce((mergedMentorComments: string, column: any): string => {
-        const commentValue = taskResult[column] ? taskResult[column].trim() : 'Empty field';
+        const commentValue = taskResult[column] ? taskResult[column] : 'Empty field';
         const comment = `### ${mentorComments[column].tableColumn}\n${commentValue}\n\n`;
 
         return mergedMentorComments + comment;
@@ -64,7 +64,7 @@ export function makeAssignment(courseId: string, taskId: string, taskResult: Arr
     const entry = Object.keys(needColumns).reduce(
         (assignment: any, column: any) => ({
             ...assignment,
-            ...setField(needColumns[column].assignmentsField, taskResult[column].trim()),
+            ...setField(needColumns[column].assignmentsField, taskResult[column]),
         }),
         { courseId, taskId },
     );

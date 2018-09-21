@@ -6,10 +6,10 @@ import Dropzone from 'react-dropzone';
 import { RootState } from 'core/reducers';
 import { fetchAllCourses, fetchTasksRelatedCourses } from 'core/actions';
 import { classNames } from 'core/styles';
-import { getCoursesNames } from 'core/selectors/courses';
+import { coursesSelectors } from 'core/selectors';
 
 import { prepareForChecking, baseCheckers, isAllNeedData, checkTable, requiredColumns } from 'core/validation';
-import { makeAssignments, processTable } from 'core/helpers/batchUpdate';
+import { makeAssignments, processTable } from 'core/helpers';
 import { readFile, checkExtension } from 'core/util';
 import { updateAssignments } from 'core/api';
 
@@ -23,7 +23,7 @@ const cn = classNames(require('./index.scss'));
 const mapStateToProps = (state: RootState, props: any): any => {
     return {
         ...props,
-        courses: getCoursesNames(state.courses.data),
+        courses: coursesSelectors.getCoursesNames(state.courses.data),
         tasks: state.tasks.courseRelated,
     };
 };
