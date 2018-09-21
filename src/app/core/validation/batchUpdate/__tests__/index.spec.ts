@@ -1,7 +1,7 @@
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { toVerifiableData, checkTable, baseCheckers } from '../';
-import { AssignmentsType } from 'core/stubs/batchUpdate';
+import { AssignmentsType } from 'core/models';
 
 const mock = new MockAdapter(axios, { delayResponse: 100 });
 
@@ -19,20 +19,20 @@ const cellPositions = toVerifiableData(columns);
 describe('check table users for existence', () => {
     describe('check student for existence', () => {
         it('should return empty array of errors when check', async () => {
-            mock.onPost('/api/user/match', { data: { role: 'student', forChecking: usersIds } }).reply(200, {
+            mock.onPost('/api/user/match', { data: { role: 'student', forCheck: usersIds } }).reply(200, {
                 data: usersIds,
             });
 
-            const errors = await baseCheckers.studentExistence({ studentId: 0 })(taskResults);
+            const errors: any = await baseCheckers.studentExistence({ studentId: 0 })(taskResults);
 
             expect(errors).toHaveLength(0);
         });
         it('should return correctness count of errors', async () => {
-            mock.onPost('/api/user/match', { data: { role: 'student', forChecking: usersIds } }).reply(200, {
+            mock.onPost('/api/user/match', { data: { role: 'student', forCheck: usersIds } }).reply(200, {
                 data: usersIds.slice(1),
             });
 
-            const errors = await baseCheckers.studentExistence({
+            const errors: any = await baseCheckers.studentExistence({
                 studentId: 0,
             })(taskResults);
 
@@ -40,13 +40,13 @@ describe('check table users for existence', () => {
             expect(errors[0]).toEqual('student 1 does not exist');
         });
         it('should return correctness count of errors', async () => {
-            mock.onPost('/api/user/match', { data: { role: 'student', forChecking: usersIds } }).reply(200, {
+            mock.onPost('/api/user/match', { data: { role: 'student', forCheck: usersIds } }).reply(200, {
                 data: usersIds.slice(2),
             });
 
-            const errors = await baseCheckers.studentExistence({
+            const errors: any = (await baseCheckers.studentExistence({
                 studentId: 0,
-            })(taskResults);
+            })(taskResults)) as string[];
 
             expect(errors).toHaveLength(2);
             expect(errors[0]).toEqual('student 1 does not exist');
@@ -55,7 +55,7 @@ describe('check table users for existence', () => {
     });
     describe('check mentor for existence', () => {
         it('should return empty array of errors when check', async () => {
-            mock.onPost('/api/user/match', { data: { role: 'mentor', forChecking: usersIds } }).reply(200, {
+            mock.onPost('/api/user/match', { data: { role: 'mentor', forCheck: usersIds } }).reply(200, {
                 data: usersIds,
             });
 
@@ -66,25 +66,25 @@ describe('check table users for existence', () => {
             expect(errors).toHaveLength(0);
         });
         it('should return correctness count of errors', async () => {
-            mock.onPost('/api/user/match', { data: { role: 'mentor', forChecking: usersIds } }).reply(200, {
+            mock.onPost('/api/user/match', { data: { role: 'mentor', forCheck: usersIds } }).reply(200, {
                 data: usersIds.slice(1),
             });
 
-            const errors = await baseCheckers.mentorExistence({
+            const errors = (await baseCheckers.mentorExistence({
                 mentorId: 0,
-            })(taskResults);
+            })(taskResults)) as string[];
 
             expect(errors).toHaveLength(1);
             expect(errors[0]).toEqual('mentor 1 does not exist');
         });
         it('should return correctness count of errors', async () => {
-            mock.onPost('/api/user/match', { data: { role: 'mentor', forChecking: usersIds } }).reply(200, {
+            mock.onPost('/api/user/match', { data: { role: 'mentor', forCheck: usersIds } }).reply(200, {
                 data: usersIds.slice(2),
             });
 
-            const errors = await baseCheckers.mentorExistence({
+            const errors = (await baseCheckers.mentorExistence({
                 mentorId: 0,
-            })(taskResults);
+            })(taskResults)) as string[];
 
             expect(errors).toHaveLength(2);
             expect(errors[0]).toEqual('mentor 1 does not exist');
@@ -96,13 +96,13 @@ describe('check table users for existence', () => {
 describe('check for duplications', () => {
     it('checks for students duplications', () => {
         const table1 = [['ted70'], ['ted70']];
-        const errors1 = baseCheckers.studentDuplication(cellPositions)(table1);
+        const errors1 = baseCheckers.studentDuplication(cellPositions)(table1) as string[];
 
         expect(errors1).toHaveLength(1);
         expect(errors1[0]).toEqual('student ted70 is duplicated');
 
         const table2 = [['ted70'], ['ted70'], ['ted70'], ['kakoc'], ['kakoc']];
-        const errors2 = baseCheckers.studentDuplication(cellPositions)(table2);
+        const errors2 = baseCheckers.studentDuplication(cellPositions)(table2) as string[];
         expect(errors2).toHaveLength(2);
         expect(errors2[0]).toEqual('student ted70 is duplicated');
         expect(errors2[1]).toEqual('student kakoc is duplicated');
@@ -121,7 +121,7 @@ describe('search for different errors in a table', () => {
         mock.onPost('/api/user/match', {
             data: {
                 role: 'student',
-                forChecking: ['ted70', 'notStudent', 'ted70', 'notStudent2'],
+                forCheck: ['ted70', 'notStudent', 'ted70', 'notStudent2'],
             },
         }).reply(200, {
             data: ['ted70'],
@@ -129,7 +129,7 @@ describe('search for different errors in a table', () => {
         mock.onPost('/api/user/match', {
             data: {
                 role: 'mentor',
-                forChecking: ['eddie79', 'notMentor', 'eddie79', 'notMentor2'],
+                forCheck: ['eddie79', 'notMentor', 'eddie79', 'notMentor2'],
             },
         }).reply(200, {
             data: ['eddie79'],
@@ -138,7 +138,7 @@ describe('search for different errors in a table', () => {
 
         const errors = await checkTable(table, Object.values(baseCheckers).map((fn: any) => fn(cellPositions)));
 
-        expect(errors).toHaveLength(7);
+        expect(errors).toHaveLength(6);
     });
 });
 

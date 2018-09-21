@@ -1,43 +1,30 @@
 import { Roles } from 'core/models/user';
-import { AssignmentsType } from 'core/stubs/batchUpdate';
+import { AssignmentsType } from 'core/models';
 import { checkers, prepareForChecking, isAllNeedData, checkTable, toVerifiableData, checkFor } from './dataChecking';
 import { matchUsers } from 'core/api';
-import { makeErrorsList } from '../utils';
-
-const messageMaker = (role: any = '', msg: any) => (id: any) => `${role} ${id} ${msg}`;
+import { makeErrorsList, messageMaker } from '../utils';
 
 const dataRetriever = (...what: any[]) => (data: any) =>
     what.reduce((needRetrievedData: any[], needValue: any) => needRetrievedData.concat(data[needValue]), []);
 
-const baseDataRetrievers = {
-    existence: dataRetriever,
-    duplications: dataRetriever,
-    floating: dataRetriever,
-};
-
 export const baseCheckers = {
     studentDuplication: checkFor(
-        baseDataRetrievers.duplications(AssignmentsType.studentId),
+        dataRetriever(AssignmentsType.studentId),
         checkers.duplication,
         makeErrorsList(messageMaker(Roles.student, 'is duplicated')),
     ),
-    mentorDuplication: checkFor(
-        baseDataRetrievers.duplications(AssignmentsType.mentorId),
-        checkers.duplication,
-        makeErrorsList(messageMaker(Roles.mentor, 'is duplicated')),
-    ),
     studentExistence: checkFor(
-        baseDataRetrievers.existence(AssignmentsType.studentId),
+        dataRetriever(AssignmentsType.studentId),
         checkers.existence(matchUsers(Roles.student)),
         makeErrorsList(messageMaker(Roles.student, 'does not exist')),
     ),
     mentorExistence: checkFor(
-        baseDataRetrievers.existence(AssignmentsType.mentorId),
+        dataRetriever(AssignmentsType.mentorId),
         checkers.existence(matchUsers(Roles.mentor)),
         makeErrorsList(messageMaker(Roles.mentor, 'does not exist')),
     ),
     floatingScore: checkFor(
-        baseDataRetrievers.floating(AssignmentsType.score, AssignmentsType.studentId),
+        dataRetriever(AssignmentsType.score, AssignmentsType.studentId),
         checkers.floating,
         makeErrorsList(messageMaker(Roles.student, 'has floating score')),
     ),

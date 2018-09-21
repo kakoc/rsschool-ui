@@ -1,7 +1,6 @@
 import { compose } from 'redux';
 
 export { checkFor, checkers } from './checkers';
-// export { checkers, checkFor };
 
 export function toVerifiableData(columns: any) {
     return Object.keys(columns).reduce((checkingData: any, column: any) => {
@@ -26,10 +25,10 @@ export const prepareForChecking = compose(
 );
 
 // @ts-ignore
-export async function checkTable([tableHeaders, ...taskResults]: any, checkers: any) {
-    const errors = [];
+export async function checkTable([tableHeaders, ...taskResults]: string[][], checkers: any[]) {
+    const errors: any = [];
     for (const checker of checkers) {
-        errors.push(...(await checker(taskResults)));
+        errors.push(...((await checker(taskResults)) as never[]));
     }
 
     return errors.filter((errType: string[]) => !!errType.length);

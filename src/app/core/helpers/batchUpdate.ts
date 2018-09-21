@@ -1,15 +1,21 @@
+import { compose } from 'redux';
 import * as xlsx from 'xlsx';
 import { DateTime } from 'luxon';
 
-import { AssignmentsType } from 'core/stubs/batchUpdate';
-import { tableDateFormat } from './../constants/batchUpdate';
+import { AssignmentsType } from 'core/models';
+import { tableDateFormat } from 'core/constants/batchUpdate';
 
 export function tableToJSON(tableAsBinary: any, listN: number = 0): string[][] {
     const table: xlsx.WorkBook = xlsx.read(tableAsBinary, { type: 'binary', cellDates: true });
     const name: string = table.SheetNames[listN];
 
-    return xlsx.utils.sheet_to_json(table.Sheets[name], { header: 1 });
+    return xlsx.utils.sheet_to_json(table.Sheets[name], { header: 1, defval: 'n/a' });
 }
+
+export const processTable = compose(
+    (table: string[][]) => table.map(row => row.map(column => column.trim())),
+    tableToJSON,
+);
 
 export function getMentorCommentsColumns(needColumns: any): any {
     return Object.keys(needColumns).reduce(

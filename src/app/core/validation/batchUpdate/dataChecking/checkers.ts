@@ -4,22 +4,20 @@ import { clearFromDuplications } from 'core/util';
 const floatCheck = (checkedData: string) => !Number.isInteger(parseFloat(checkedData));
 
 export const checkers = {
-    floating: (forCheck: any, columnN: any, rowOwnerColumn: any) =>
-        forCheck.filter((row: any) => floatCheck(row[columnN])).map((row: any) => row[rowOwnerColumn]),
+    floating: (forCheck: string[][], columnN: number, rowOwnerColumn: number) =>
+        forCheck.filter((row: string[]) => floatCheck(row[columnN])).map((row: string[]) => row[rowOwnerColumn]),
 
-    duplication: (forCheck: any, columnN: any) =>
+    duplication: (forCheck: string[][], columnN: number) =>
         clearFromDuplications(
             forCheck
-                .map((row: any) => row[columnN])
-                .filter(
-                    (value: any, _: any, arr: any) => arr.indexOf(value) !== arr.lastIndexOf(value) && arr.length !== 1,
-                ),
+                .map((row: string[]) => row[columnN])
+                .filter((value, _, arr) => arr.indexOf(value) !== arr.lastIndexOf(value) && arr.length !== 1),
         ),
 
-    existence: (fetchData: any) => async (forCheck: any, columnN: any) => {
-        const wanted = forCheck.map((row: any) => row[columnN]);
+    existence: (fetchData: any) => async (forCheck: string[][], columnN: number) => {
+        const wanted = forCheck.map(row => row[columnN]);
         const found = await fetchData(wanted);
-        return wanted.filter((value: any) => !found.includes(value));
+        return wanted.filter(value => !found.includes(value));
     },
 };
 
@@ -27,6 +25,6 @@ export function checkFor(retrieveNeedInfo: any, checker: any, makeErrors: any) {
     return (dataInfo: any) =>
         compose(
             makeErrors,
-            (data: any) => checker(data, ...retrieveNeedInfo(dataInfo)),
+            (data: string[][]) => checker(data, ...retrieveNeedInfo(dataInfo)),
         );
 }

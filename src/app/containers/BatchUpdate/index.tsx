@@ -4,28 +4,27 @@ import { Button, Alert } from 'reactstrap';
 import Dropzone from 'react-dropzone';
 
 import { RootState } from 'core/reducers';
-import { fetchAllCourses } from 'core/actions';
+import { fetchAllCourses, fetchTasksRelatedCourses } from 'core/actions';
 import { classNames } from 'core/styles';
 import { getCoursesNames } from 'core/selectors/courses';
 
 import { prepareForChecking, baseCheckers, isAllNeedData, checkTable, requiredColumns } from 'core/validation';
-import { tableToJSON, makeAssignments } from 'core/helpers/batchUpdate';
+import { makeAssignments, processTable } from 'core/helpers/batchUpdate';
 import { readFile, checkExtension } from 'core/util';
-import { saveBatchUpdateTable } from 'core/api';
+import { updateAssignments } from 'core/api';
 
 import { Dropdown } from 'components/Dropdown';
 import { BatchUpdateTable } from 'components/Table';
 
-import * as tmp from './tmp';
+import { ITaskModel, ICourse, AssignmentsType } from 'core/models';
 
 const cn = classNames(require('./index.scss'));
 
-// TODO add real
 const mapStateToProps = (state: RootState, props: any): any => {
     return {
         ...props,
         courses: getCoursesNames(state.courses.data),
-        tasks: tmp.tasks,
+        tasks: state.tasks.courseRelated,
     };
 };
 
@@ -35,7 +34,9 @@ const mapDispatchToProps = (dispatch: any, props: any): any => {
         fetchCourses: () => {
             dispatch(fetchAllCourses());
         },
-        fetchTasks: () => {},
+        fetchTasks: () => {
+            dispatch(fetchTasksRelatedCourses());
+        },
     };
 };
 
@@ -58,8 +59,6 @@ interface IState {
     isTableParsed: boolean;
     isTableSaved: boolean;
     table: string[][];
-
-    [key: string]: any;
 }
 
 class BatchUpdate extends React.Component<any, IState> {
@@ -76,14 +75,15 @@ class BatchUpdate extends React.Component<any, IState> {
 
     componentDidMount() {
         this.props.fetchCourses();
-        // TODO when tasks will be added
         this.props.fetchTasks();
     }
 
     setTable = (files: any): void => {
         if (checkExtension(files[0].name, 'xlsx')) {
             readFile(files[0], (tableAsBytesString: string) =>
-                this.setState({ table: tableToJSON(tableAsBytesString) }),
+                this.setState({
+                    table: processTable(tableAsBytesString),
+                }),
             );
 
             this.setState({
@@ -147,7 +147,7 @@ class BatchUpdate extends React.Component<any, IState> {
 
     checkTableForCorrectness = async (tableColumns: ITableColumns, table: string[][]): Promise<boolean> => {
         const columns = this.getTableColumnsForSaving(tableColumns);
-        const appliedCheckers = prepareForChecking(columns)(Object.keys(baseCheckers));
+        const appliedCheckers = prepareForChecking(columns)(Object.values(baseCheckers));
         // @ts-ignore
         const [tableHeaders, ...taskResults] = table;
 
@@ -178,7 +178,8 @@ class BatchUpdate extends React.Component<any, IState> {
 
             try {
                 // @ts-ignore
-                const response = await saveBatchUpdateTable(assignments);
+                const response = await updateAssignments(assignments);
+
                 this.setState({ isTableSaved: true, errors: [] });
             } catch (e) {
                 this.setState({ errors: ['Something was wrong during saving on the server'] });
@@ -247,13 +248,35 @@ class BatchUpdate extends React.Component<any, IState> {
                 </Alert>
             );
         } else if (this.state.isTableSaved) {
-            return <Alert color="success">Table was successfully saved!</Alert>;
+            return <Alert color="success">Assignments were successfully updated!</Alert>;
         } else {
             return null;
         }
     };
 
-    handleDropdownSelection = (type: string) => ({ id }: any) => this.setState({ [type]: id });
+    handleDropdownSelection = (type: string) => async ({ id }: any) => {
+        this.setState({ [type]: id } as any);
+    };
+
+    getCourses() {
+        const { courses } = this.props;
+
+        return courses.map((course: ICourse) => ({
+            id: course._id,
+            value: course.name,
+        }));
+    }
+
+    getCourseTasks() {
+        const { tasks } = this.props;
+        const { selectedCourse } = this.state;
+        const courseTasks = tasks[selectedCourse] || [];
+
+        return courseTasks.map((task: ITaskModel) => ({
+            id: task._id,
+            value: task.title,
+        }));
+    }
 
     render() {
         return (
@@ -263,20 +286,14 @@ class BatchUpdate extends React.Component<any, IState> {
                         <Dropdown
                             defaultValue="Select Course"
                             onSelect={this.handleDropdownSelection('selectedCourse')}
-                            menuItems={this.props.courses.map((course: any) => ({
-                                id: course._id,
-                                value: course.name,
-                            }))}
+                            menuItems={this.getCourses()}
                         />
                     </div>
                     <div className="col-md-3">
                         <Dropdown
                             defaultValue="Select Task"
                             onSelect={this.handleDropdownSelection('selectedTask')}
-                            menuItems={this.props.tasks.map((task: any) => ({
-                                id: task._id,
-                                value: task.name,
-                            }))}
+                            menuItems={this.getCourseTasks()}
                         />
                     </div>
                 </div>
@@ -320,8 +337,7 @@ class BatchUpdate extends React.Component<any, IState> {
                 <div className={cn('top-margin') + ' row justify-content-lg-center'}>
                     {this.state.isTableParsed && (
                         <BatchUpdateTable
-                            // TODO replace assignments when will be ready
-                            rows={{ ...this.state.tableColumns, dropdown: Object.values(tmp.AssignmentsType) }}
+                            rows={{ ...this.state.tableColumns, dropdown: Object.values(AssignmentsType) }}
                             handleClick={this.addColumnInfo}
                         />
                     )}

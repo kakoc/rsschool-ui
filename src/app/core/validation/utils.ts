@@ -10,3 +10,7 @@ export function makeErrorsList(makeErrorMsg: (invalidValue: string) => string) {
         );
     };
 }
+
+export function messageMaker(role: any = '', msg: any) {
+    return (id: any) => `${role} ${id} ${msg}`;
+}
