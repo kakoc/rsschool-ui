@@ -28,16 +28,9 @@ const mapStateToProps = (state: RootState, props: any): any => {
     };
 };
 
-const mapDispatchToProps = (dispatch: any, props: any): any => {
-    return {
-        ...props,
-        fetchCourses: () => {
-            dispatch(fetchAllCourses());
-        },
-        fetchTasks: () => {
-            dispatch(fetchTasksRelatedCourses());
-        },
-    };
+const mapDispatchToProps = {
+    fetchCourses: fetchAllCourses,
+    fetchTasks: fetchTasksRelatedCourses,
 };
 
 interface ITableColumn {

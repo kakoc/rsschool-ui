@@ -31,5 +31,8 @@ export function getFeed(): Promise<ICourse[]> {
 
 export function matchUsers(role: Roles) {
     return (ids: string[]) =>
-        axios.post(`/api/user/match`, { data: { role, forCheck: ids } }).then(response => response.data.data);
+        axios
+            .post(`/api/user/match`, { data: { role, forCheck: ids } })
+            .then(response => response.data.data)
+            .catch(() => []);
 }

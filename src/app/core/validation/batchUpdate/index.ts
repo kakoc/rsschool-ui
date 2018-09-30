@@ -4,8 +4,7 @@ import { checkers, prepareForChecking, isAllNeedData, checkTable, toVerifiableDa
 import { matchUsers } from 'core/api';
 import { makeErrorsList, messageMaker } from '../utils';
 
-const dataRetriever = (...what: any[]) => (data: any) =>
-    what.reduce((needRetrievedData: any[], needValue: any) => needRetrievedData.concat(data[needValue]), []);
+const dataRetriever = (...what: any[]) => (data: any) => what.map((needValue: any) => data[needValue]);
 
 export const baseCheckers = {
     studentDuplication: checkFor(
